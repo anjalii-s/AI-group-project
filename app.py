@@ -1,5 +1,9 @@
 import streamlit as st
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 from PIL import Image
+from sklearn.metrics import confusion_matrix
 
 # ======================================
 # PAGE CONFIG
@@ -72,12 +76,32 @@ if page == "Dashboard":
     • High interaction with multiple addresses  
     """)
 
-    st.header("Model Evaluation")
+    # ======================================
+    # DYNAMIC CONFUSION MATRIX
+    # ======================================
+    st.header("Dynamic Confusion Matrix")
+
     try:
-        img = Image.open("confusion_matrix.png")
-        st.image(img, caption="Confusion Matrix – Fraud Detection", use_column_width=True)
-    except:
-        st.warning("Confusion matrix image not found. Upload confusion_matrix.png to display it.")
+        pred_df = pd.read_csv("predictions_with_probs.csv")
+
+        # Apply threshold
+        pred_df["predicted"] = (pred_df["fraud_prob"] >= threshold).astype(int)
+
+        # Compute confusion matrix
+        cm = confusion_matrix(pred_df["FLAG"], pred_df["predicted"])
+
+        # Plot confusion matrix
+        fig, ax = plt.subplots(figsize=(5, 4))
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Actual")
+        ax.set_title(f"Confusion Matrix (Threshold = {threshold})")
+
+        st.pyplot(fig)
+
+    except Exception as e:
+        st.warning("Dynamic confusion matrix could not be generated. Ensure predictions_with_probs.csv is uploaded.")
+        st.text(str(e))
 
 # ======================================
 # BUSINESS UNDERSTANDING
